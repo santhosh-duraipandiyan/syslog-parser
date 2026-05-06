@@ -1,0 +1,763 @@
+
+<h2 class="sr-only">Interactive explainer for syslog formats and the Python parser code — step through concepts, formats, and code sections</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1.5rem;border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:0}
+.tab{font-size:12px;padding:7px 14px;border-radius:6px 6px 0 0;cursor:pointer;color:var(--color-text-secondary);border:0.5px solid transparent;border-bottom:none;transition:all .15s;background:transparent;position:relative;bottom:-1px}
+.tab:hover{color:var(--color-text-primary);background:var(--color-background-secondary)}
+.tab.active{color:var(--color-text-primary);font-weight:500;background:var(--color-background-primary);border-color:var(--color-border-tertiary)}
+.panel{display:none}.panel.active{display:block}
+.section{margin-bottom:1.5rem}
+.label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.body{font-size:13px;color:var(--color-text-primary);line-height:1.7}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:10px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.card-body{font-size:12px;color:var(--color-text-secondary);line-height:1.6}
+pre{font-family:var(--font-mono);font-size:11.5px;line-height:1.7;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;overflow-x:auto;border:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);white-space:pre-wrap;word-break:break-all}
+.hl{display:inline;border-radius:3px;padding:1px 4px}
+.hl-pri{background:#EEEDFE;color:#3C3489}
+.hl-ts{background:#E1F5EE;color:#085041}
+.hl-host{background:#FAEEDA;color:#633806}
+.hl-app{background:#FAECE7;color:#712B13}
+.hl-pid{background:#E6F1FB;color:#0C447C}
+.hl-msg{background:#EAF3DE;color:#27500A}
+.hl-sd{background:#FBEAF0;color:#72243E}
+.field-legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.fl{font-size:11px;border-radius:3px;padding:2px 7px}
+.explain-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
+.explain-left{font-size:12px;color:var(--color-text-secondary);line-height:1.6}
+.explain-right{font-family:var(--font-mono);font-size:11px;background:var(--color-background-secondary);border-radius:6px;padding:10px 12px;color:var(--color-text-primary);overflow-x:auto;white-space:pre-wrap;word-break:break-all;border:0.5px solid var(--color-border-tertiary)}
+.step-nav{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.snav-btn{font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary);background:transparent}
+.snav-btn:hover{background:var(--color-background-secondary)}
+.snav-btn:disabled{opacity:.35;cursor:not-allowed}
+.step-dots{display:flex;gap:5px;align-items:center}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--color-border-secondary);transition:background .2s}
+.dot.on{background:var(--color-text-primary)}
+.step-counter{font-size:12px;color:var(--color-text-secondary);margin-left:auto}
+.alert-box{border-left:3px solid;padding:10px 14px;border-radius:0;margin-top:8px;font-size:12px;line-height:1.6}
+.alert-box.warn{border-color:#EF9F27;background:#FAEEDA;color:#633806}
+.alert-box.info{border-color:#378ADD;background:#E6F1FB;color:#0C447C}
+.alert-box.good{border-color:#639922;background:#EAF3DE;color:#27500A}
+.codeblock{position:relative}
+.code-label{font-size:10px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;padding:4px 10px;background:var(--color-background-secondary);border-radius:6px 6px 0 0;display:inline-block;border:0.5px solid var(--color-border-tertiary);border-bottom:none}
+code{font-family:var(--font-mono);font-size:11.5px;background:var(--color-background-secondary);border-radius:3px;padding:1px 5px;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.explain-row,.two-col{grid-template-columns:1fr}}
+</style>
+
+<div style="padding:1rem 0">
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('what')">What is syslog?</div>
+  <div class="tab" onclick="switchTab('pri')">The PRI field</div>
+  <div class="tab" onclick="switchTab('formats')">Log formats</div>
+  <div class="tab" onclick="switchTab('code')">Code walkthrough</div>
+  <div class="tab" onclick="switchTab('alerts')">Alert engine</div>
+  <div class="tab" onclick="switchTab('blueteam')">Blue team use</div>
+</div>
+
+<div id="panel-what" class="panel active">
+  <div class="section">
+    <div class="label">The simplest explanation</div>
+    <div class="body">Imagine every program on your computer keeps a diary. Every time something important happens — a user logs in, a file is created, a network connection is made — the program writes one line in its diary. <b>Syslog</b> is the standardised format for writing those diary entries, and the system for collecting all those diaries in one place.</div>
+  </div>
+  <div class="section">
+    <div class="label">Why it matters in blue team work</div>
+    <div class="two-col">
+      <div class="card"><div class="card-title">Detection</div><div class="card-body">Every brute force attack, every lateral movement, every privilege escalation — they all leave syslog entries. Your job is to find the suspicious ones before the attacker achieves their goal.</div></div>
+      <div class="card"><div class="card-title">Forensics</div><div class="card-body">After an incident, syslog is how you reconstruct "what happened and when". It's your timeline. Without it you're blind to what the attacker did inside your network.</div></div>
+      <div class="card"><div class="card-title">Correlation</div><div class="card-body">A failed SSH login on one machine means little. The same IP failing 200 times across 30 machines in 60 seconds means something very different. Correlation requires parsing.</div></div>
+      <div class="card"><div class="card-title">SIEM feeding</div><div class="card-body">Tools like Splunk, Microsoft Sentinel, and Elastic SIEM all consume syslog. The better your parser, the richer the data your SIEM gets to work with.</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="label">Where syslogs come from</div>
+    <div class="body" style="margin-bottom:10px">Every device that speaks TCP/IP can send syslogs. They all look slightly different, which is exactly why a parser is needed.</div>
+    <div class="two-col">
+      <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.8">
+        Linux servers — <code>/var/log/auth.log</code>, <code>syslog</code><br>
+        Windows — Event Log forwarded via NXLog<br>
+        Cisco routers &amp; switches — IOS mnemonics<br>
+        Cisco firewalls — ASA connection logs
+      </div>
+      <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.8">
+        Palo Alto firewalls — CSV traffic/threat logs<br>
+        AWS — VPC Flow Logs via CloudWatch<br>
+        Web servers — Apache/Nginx access logs<br>
+        Applications — any custom syslog sender
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="label">The anatomy of every syslog line</div>
+    <div class="field-legend">
+      <span class="fl hl-pri">PRI</span>
+      <span class="fl hl-ts">timestamp</span>
+      <span class="fl hl-host">hostname</span>
+      <span class="fl hl-app">app / process</span>
+      <span class="fl hl-pid">PID</span>
+      <span class="fl hl-msg">message</span>
+    </div>
+    <pre><span class="hl hl-pri">&lt;34&gt;</span><span class="hl hl-ts">Oct 11 22:14:15</span> <span class="hl hl-host">webserver01</span> <span class="hl hl-app">sshd</span>[<span class="hl hl-pid">29785</span>]: <span class="hl hl-msg">Failed password for alice from 192.168.1.42 port 22 ssh2</span></pre>
+    <div class="alert-box info" style="margin-top:10px">Every syslog line — no matter which platform it comes from — tries to tell you the same five things: <b>when</b> it happened (timestamp), <b>where</b> it came from (hostname), <b>what</b> generated it (app/process), <b>how bad</b> it is (severity inside PRI), and <b>what happened</b> (message).</div>
+  </div>
+</div>
+
+<div id="panel-pri" class="panel">
+  <div class="section">
+    <div class="label">What the PRI field is</div>
+    <div class="body">The number inside <code>&lt;angle brackets&gt;</code> at the start of every syslog message is called the Priority (PRI). It looks like just one number, but it secretly contains two pieces of information squeezed together using simple maths.</div>
+  </div>
+  <div class="section">
+    <div class="label">The formula</div>
+    <div class="explain-row">
+      <div class="explain-left">
+        <b>Facility</b> = what part of the system generated the log.<br><br>
+        Examples: <code>0</code>=kernel, <code>4</code>=auth, <code>10</code>=authpriv, <code>16-23</code>=local0-7<br><br>
+        <b>Severity</b> = how bad the event is, on a scale of 0–7.<br><br>
+        <code>0</code>=emergency, <code>1</code>=alert, <code>2</code>=critical, <code>3</code>=error, <code>4</code>=warning, <code>5</code>=notice, <code>6</code>=info, <code>7</code>=debug
+      </div>
+      <div class="explain-right">PRI = (facility × 8) + severity
+
+To decode PRI 34:
+  facility = 34 ÷ 8 = 4  → "auth"
+  severity = 34 mod 8 = 2 → "critical"
+
+In Python (from the code):
+  facility_num = pri_val >> 3   # same as ÷ 8
+  severity_num = pri_val & 0x07 # same as mod 8</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="label">Try it — decode a PRI value</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:13px;color:var(--color-text-secondary)">PRI value:</span>
+      <input type="range" min="0" max="191" value="34" step="1" id="pri-slider" style="flex:1;min-width:120px" oninput="decodePRI(this.value)">
+      <code id="pri-val" style="font-size:15px;min-width:32px">&lt;34&gt;</code>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px;text-align:center">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">raw PRI</div>
+        <div style="font-size:20px;font-weight:500" id="dec-raw">34</div>
+      </div>
+      <div style="background:#FAEEDA;border-radius:var(--border-radius-md);padding:12px;text-align:center">
+        <div style="font-size:11px;color:#633806;margin-bottom:4px">facility</div>
+        <div style="font-size:16px;font-weight:500;color:#633806" id="dec-fac">auth (4)</div>
+      </div>
+      <div style="background:#FCEBEB;border-radius:var(--border-radius-md);padding:12px;text-align:center">
+        <div style="font-size:11px;color:#791F1F;margin-bottom:4px">severity</div>
+        <div style="font-size:16px;font-weight:500;color:#791F1F" id="dec-sev">critical (2)</div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="label">Common PRI values you'll see in the wild</div>
+    <div class="two-col">
+      <div class="card"><div class="card-title"><code>&lt;34&gt;</code> — auth + critical</div><div class="card-body">SSH login failures, PAM auth errors, su failures. High-value for blue team detection.</div></div>
+      <div class="card"><div class="card-title"><code>&lt;86&gt;</code> — security + info</div><div class="card-body">Normal auth events — successful logins, audit records. High volume, low individual value.</div></div>
+      <div class="card"><div class="card-title"><code>&lt;14&gt;</code> — user + info</div><div class="card-body">General user-space application logs. Used by many applications as a default. AWS uses this.</div></div>
+      <div class="card"><div class="card-title"><code>&lt;166&gt;</code> — local4 + info</div><div class="card-body">Cisco ASA default. local0-7 facilities are available for custom use by applications and vendors.</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="panel-formats" class="panel">
+  <div id="fmt-steps">
+    <div class="step-nav">
+      <button class="snav-btn" onclick="fmtStep(-1)" id="fmt-prev" disabled>← prev</button>
+      <div class="step-dots" id="fmt-dots"></div>
+      <span class="step-counter" id="fmt-counter">1 / 8</span>
+      <button class="snav-btn" onclick="fmtStep(1)" id="fmt-next">next →</button>
+    </div>
+    <div id="fmt-content"></div>
+  </div>
+</div>
+
+<div id="panel-code" class="panel">
+  <div id="code-steps">
+    <div class="step-nav">
+      <button class="snav-btn" onclick="codeStep(-1)" id="code-prev" disabled>← prev</button>
+      <div class="step-dots" id="code-dots"></div>
+      <span class="step-counter" id="code-counter">1 / 7</span>
+      <button class="snav-btn" onclick="codeStep(1)" id="code-next">next →</button>
+    </div>
+    <div id="code-content"></div>
+  </div>
+</div>
+
+<div id="panel-alerts" class="panel">
+  <div class="section">
+    <div class="label">What the alert engine does</div>
+    <div class="body">After every log line is parsed into a structured object, the alert engine checks it against a list of rules. Each rule is just a Python function that returns <code>True</code> or <code>False</code>. If it returns <code>True</code>, the alert fires.</div>
+  </div>
+  <div class="section">
+    <div class="label">How a rule works — step by step</div>
+    <pre>rule = {
+    "id":   "AUTH001",
+    "name": "SSH brute force — failed password",
+
+    # This is a lambda — a tiny one-line function.
+    # It receives the parsed log object (l) and checks
+    # two things at once using 'and':
+    "check": lambda l: (
+        l.action == "auth_failed"       # did parse_ssh_message() set this?
+        and
+        l.app and "sshd" in l.app.lower()  # is the app actually SSH?
+    ),
+    "severity": "high",
+}</pre>
+    <div class="alert-box info" style="margin-top:8px">A lambda is just a function written in one line. <code>lambda l: l.action == "auth_failed"</code> means "given a log object called l, return True if its action field equals auth_failed". Same as writing a <code>def</code> function but shorter.</div>
+  </div>
+  <div class="section">
+    <div class="label">The rules in the code and what they catch</div>
+    <div class="card"><div class="card-title">AUTH001 — SSH brute force</div><div class="card-body">Fires when <code>action == "auth_failed"</code> AND app contains "sshd". The <code>parse_ssh_message()</code> function sets the action field by looking for "Failed" in the message text.</div></div>
+    <div class="card"><div class="card-title">AUTH002 — Root login attempt</div><div class="card-body">Fires when <code>username == "root"</code> AND app is sshd. Note that this fires even on successful root logins — any SSH connection targeting root is suspicious in most environments.</div></div>
+    <div class="card"><div class="card-title">PRIV001 — Sudo escalation to root</div><div class="card-body">Fires when app contains "sudo" AND <code>extra["sudo_target"] == "root"</code>. The <code>parse_sudo_message()</code> function extracts the target user from the TTY/PWD/USER/COMMAND line format.</div></div>
+    <div class="card"><div class="card-title">WIN001 / WIN002 — Windows EventIDs</div><div class="card-body">Checks <code>event_id == "4625"</code> (failed logon) or <code>"4720"</code> (account created). These are extracted from the Windows syslog bridge format message body using <code>parse_windows_message()</code>.</div></div>
+    <div class="alert-box good" style="margin-top:10px">In a real SIEM, rules are loaded from YAML or JSON config files — not hardcoded. You'd also add a counter (how many AUTH001s from the same IP in 60 seconds?) and a threshold (fire a higher-severity alert at 5+). That's the foundation of SIEM correlation.</div>
+  </div>
+  <div class="section">
+    <div class="label">Try it — simulate an alert check</div>
+    <div style="margin-bottom:10px">
+      <select id="sim-log" style="width:100%;margin-bottom:8px;font-size:12px">
+        <option value="ssh_fail">SSH failed password for alice from 192.168.1.42</option>
+        <option value="ssh_root">SSH failed password for root from 10.0.0.5</option>
+        <option value="sudo">Sudo: alice → root → /bin/bash</option>
+        <option value="win_fail">Windows EventID 4625 — failed logon</option>
+        <option value="win_acct">Windows EventID 4720 — account created</option>
+        <option value="clean">Normal syslog — kernel info message</option>
+      </select>
+      <button onclick="simAlert()" style="font-size:12px;padding:6px 14px;cursor:pointer">Run alert check</button>
+    </div>
+    <div id="sim-result" style="font-size:12px;color:var(--color-text-secondary);font-style:italic">Select a log line and click "Run alert check"</div>
+  </div>
+</div>
+
+<div id="panel-blueteam" class="panel">
+  <div class="section">
+    <div class="label">How a SOC analyst uses a syslog parser</div>
+    <div class="body" style="margin-bottom:12px">A parser on its own doesn't protect anything. It's the foundation that makes detection possible. Here's the chain from raw log to actionable alert.</div>
+    <div class="card"><div class="card-title">Step 1 — Collection</div><div class="card-body">All devices send syslog to a central collector (rsyslog, syslog-ng, Fluentd). UDP port 514 is common; TLS on 6514 for encrypted transport. Your parser reads from this collector or from log files on disk.</div></div>
+    <div class="card"><div class="card-title">Step 2 — Parsing (your code)</div><div class="card-body">The raw strings are converted to structured objects. Now you can query "all logs where src_ip = X" or "all logs where severity = critical and app = sshd". Without parsing, all you have is text.</div></div>
+    <div class="card"><div class="card-title">Step 3 — Normalisation</div><div class="card-body">Different platforms call the same field different things. Cisco calls it "Source", Linux calls it "from", Windows calls it "IpAddress". Normalisation maps them all to the same field name so you can search once across all sources.</div></div>
+    <div class="card"><div class="card-title">Step 4 — Enrichment</div><div class="card-body">Add context to the structured log: GeoIP lookup on src_ip, threat intelligence feed check, hostname resolution, user account lookup in AD. This is what separates a basic parser from a real detection platform.</div></div>
+    <div class="card"><div class="card-title">Step 5 — Correlation</div><div class="card-body">One AUTH001 alert is noise. 200 AUTH001 alerts from the same IP against 30 different usernames in 60 seconds is a brute force attack. Correlation adds the time and count dimension to detection.</div></div>
+    <div class="card"><div class="card-title">Step 6 — Response</div><div class="card-body">Correlated alerts trigger SOAR playbooks: block the IP on the firewall, disable the account, create a ticket, page the analyst. Your parser output feeds this entire chain.</div></div>
+  </div>
+  <div class="section">
+    <div class="label">Key log sources and what to look for</div>
+    <div class="two-col">
+      <div>
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px">Linux auth.log</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.8">
+          Watch for: repeated "Failed password"<br>
+          Watch for: "Invalid user" (username guessing)<br>
+          Watch for: "Accepted password" from new IPs<br>
+          Watch for: sudo to root outside business hours
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px">Windows Event Log</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.8">
+          4625 = Failed logon (track by account + source IP)<br>
+          4624 = Successful logon (logon type 3 = network)<br>
+          4720 = Account created (who, when?)<br>
+          4688 = Process created (parent process matters)
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px">Cisco ASA</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.8">
+          302013/302015 = TCP/UDP connections built<br>
+          302014/302016 = connections torn down<br>
+          106023 = access list deny<br>
+          713228 = VPN session established
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px">Palo Alto TRAFFIC</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.8">
+          action = "deny" — blocked connections<br>
+          action = "allow" + unusual port = suspicious<br>
+          High bytes from internal host = exfil risk<br>
+          Unknown app category = C2 or tunneling
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="label">Where to take the parser next</div>
+    <div class="alert-box good">
+      <b>Add SQLite output</b> — store parsed logs in a database so you can query across sessions with SQL.<br><br>
+      <b>Add threshold correlation</b> — count AUTH001 alerts per (src_ip, 60s window) and fire a higher-severity BRUTE_FORCE_CAMPAIGN alert at 10+.<br><br>
+      <b>Add GeoIP</b> — use the <code>geoip2</code> library to tag each src_ip with country, ASN, and city. Logins from unexpected countries are high-value alerts.<br><br>
+      <b>Add threat intel</b> — check src_ip against VirusTotal, AbuseIPDB, or a local threat feed. One line: if the IP is known-bad, bump the alert severity to critical.<br><br>
+      <b>Add live tail</b> — use Python's <code>watchdog</code> library to monitor a log file in real time instead of batch processing. This is how a real SIEM agent works.
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const FACILITIES={0:"kern",1:"user",2:"mail",3:"daemon",4:"auth",5:"syslog",6:"lpr",7:"news",8:"uucp",9:"cron",10:"authpriv",11:"ftp",16:"local0",17:"local1",18:"local2",19:"local3",20:"local4",21:"local5",22:"local6",23:"local7"};
+const SEVERITIES={0:"emergency",1:"alert",2:"critical",3:"error",4:"warning",5:"notice",6:"info",7:"debug"};
+
+function decodePRI(v){
+  v=parseInt(v);
+  document.getElementById('pri-val').textContent='<'+v+'>';
+  document.getElementById('dec-raw').textContent=v;
+  const fNum=v>>3, sNum=v&7;
+  document.getElementById('dec-fac').textContent=(FACILITIES[fNum]||'local'+fNum)+' ('+fNum+')';
+  document.getElementById('dec-sev').textContent=(SEVERITIES[sNum]||sNum)+' ('+sNum+')';
+}
+
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const ids=['what','pri','formats','code','alerts','blueteam'];
+    t.classList.toggle('active',ids[i]===id);
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+const FMT_STEPS=[
+  {
+    title:'RFC 3164 — the original BSD syslog',
+    why:'Used by: most Linux distributions, older network gear, anything that doesn\'t explicitly support RFC 5424.',
+    line:`<span class="hl hl-pri">&lt;34&gt;</span><span class="hl hl-ts">Oct 11 22:14:15</span> <span class="hl hl-host">myhost</span> <span class="hl hl-app">su</span>: <span class="hl hl-msg">Bad su for root by alice</span>`,
+    fields:[
+      ['PRI &lt;34&gt;','Always at the start in angle brackets. Contains facility and severity packed together. Decode: 34 ÷ 8 = 4 (auth facility), 34 mod 8 = 2 (critical severity).'],
+      ['Timestamp','BSD format — Mon DD HH:MM:SS. No year! The parser has to guess the year (usually current year). No timezone either — assumed local time. This is a well-known limitation of RFC 3164.'],
+      ['Hostname','The machine that generated the log. Can be a short hostname, FQDN, or IP address.'],
+      ['App and PID','App name, optionally followed by [PID] in brackets. Some apps include PID (sshd[29785]), others don\'t (su:).'],
+      ['Message','Everything after the colon. Free text — no standard structure. Must be parsed with regex per application.'],
+    ],
+    note:'RFC 3164 is from the year 2001. It was never formally standardised — it just described what BSD Unix had been doing. The lack of year, timezone, and structured data are its biggest weaknesses.'
+  },
+  {
+    title:'RFC 5424 — modern structured syslog',
+    why:'Used by: systemd journal forwarding, rsyslog in modern mode, any application explicitly targeting the standard.',
+    line:`<span class="hl hl-pri">&lt;34&gt;</span>1 <span class="hl hl-ts">2024-10-11T22:14:15.003Z</span> <span class="hl hl-host">myhost</span> <span class="hl hl-app">su</span> <span class="hl hl-pid">1234</span> ID47 <span class="hl hl-sd">[exampleSDID iut="3" eventSource="App"]</span> <span class="hl hl-msg">Bad su for root</span>`,
+    fields:[
+      ['Version "1"','The "1" after the PRI is the format version. This is what tells the parser "this is RFC 5424, not 3164". Always check for this before trying other patterns.'],
+      ['ISO-8601 timestamp','Full timestamp with date, time, milliseconds, and timezone (Z = UTC). This solves the biggest problem of RFC 3164. The parser normalises this to UTC ISO format.'],
+      ['Structured Data [SD]','Key-value pairs in [brackets]. Format: [SD-ID param1="value1" param2="value2"]. Can have multiple SD blocks. The parser uses parse_rfc5424_sd() to extract these into a Python dict.'],
+      ['MSGID','A message type identifier (ID47 in this example). Used for categorising messages. Often "-" meaning absent.'],
+      ['PID','Explicit process ID field. Separate from the app name unlike RFC 3164 where they\'re joined as app[PID].'],
+    ],
+    note:'RFC 5424 (2009) fixed all the problems with 3164. But because 3164 was so widely deployed, both formats coexist today. Your parser has to handle both.'
+  },
+  {
+    title:'Linux auth.log — SSH, PAM, sudo',
+    why:'Used by: Debian, Ubuntu, and derivatives. Found at /var/log/auth.log. This is your highest-value log source for detecting account compromise.',
+    line:`<span class="hl hl-ts">Oct 11 22:14:15</span> <span class="hl hl-host">webserver01</span> <span class="hl hl-app">sshd</span>[<span class="hl hl-pid">29785</span>]: <span class="hl hl-msg">Failed password for alice from 192.168.1.42 port 22 ssh2</span>`,
+    fields:[
+      ['No PRI prefix!','When you read directly from /var/log/auth.log, the OS has already stripped the PRI field. It\'s only present when forwarded over the network. This is why the parser has a separate Linux auth.log pattern.'],
+      ['App[PID] together','Unlike RFC 5424 where they\'re separate, here sshd and [29785] are joined. The regex captures the app name and optional [PID] as separate groups.'],
+      ['Message body — the gold','parse_ssh_message() extracts: username (alice), source IP (192.168.1.42), port (22), auth method (ssh2), and sets action="auth_failed" or "auth_success" based on keywords.'],
+      ['Sudo format (different!)','sudo logs look like: alice : TTY=pts/0 ; PWD=/ ; USER=root ; COMMAND=/bin/bash. parse_sudo_message() extracts the requesting user, target user, and command.'],
+    ],
+    note:'Red hat / CentOS uses /var/log/secure instead of /var/log/auth.log. The format is identical — only the filename changes.'
+  },
+  {
+    title:'Linux kern.log — kernel and iptables',
+    why:'Used by: the Linux kernel itself. Critical for network forensics — iptables firewall rules write here when LOG target is configured.',
+    line:`<span class="hl hl-ts">Oct 11 22:14:15</span> <span class="hl hl-host">srv01</span> <span class="hl hl-app">kernel</span>: [<span class="hl hl-pid">12345.678</span>] <span class="hl hl-msg">iptables: IN=eth0 SRC=10.0.0.5 DST=10.0.0.1 PROTO=TCP SPT=55421 DPT=22</span>`,
+    fields:[
+      ['"PID" is kernel uptime','The number in [brackets] after "kernel:" is NOT a process ID. It\'s seconds.microseconds since the kernel booted. You can\'t correlate it to a process — it\'s just a timestamp offset.'],
+      ['Key=value message body','iptables logs use key=value pairs: IN=eth0, SRC=..., DST=..., PROTO=..., SPT=source port, DPT=destination port. parse_iptables_message() uses a regex to extract all pairs into a dict.'],
+      ['IN= and OUT=','IN= is the interface the packet arrived on. OUT= is where it\'s going. If IN= has a value and OUT= is empty, the packet is destined for the local machine. If both have values, it\'s being forwarded.'],
+    ],
+    note:'To make iptables log to syslog, add a rule like: iptables -A INPUT -j LOG --log-prefix "iptables: ". Without the LOG target, network events won\'t appear in kern.log at all.'
+  },
+  {
+    title:'Cisco IOS — router and switch logs',
+    why:'Used by: Cisco routers, switches, and access points running IOS or IOS-XE. The mnemonic format is distinctive and immediately identifiable.',
+    line:`<span class="hl hl-pri">&lt;189&gt;</span><span class="hl hl-ts">Oct 11 22:14:35</span> <span class="hl hl-host">router01</span> <span class="hl hl-app">%SEC_LOGIN-5-LOGIN_SUCCESS</span>: <span class="hl hl-msg">Login Success [user: admin] [Source: 10.1.1.5]</span>`,
+    fields:[
+      ['%FACILITY-SEV-MNEMONIC','The app field is a Cisco mnemonic in the format %FACILITY-SEVERITY-MNEMONIC. Split by "-": SEC_LOGIN is the facility, 5 is severity (notice), LOGIN_SUCCESS is the event type. The parser splits this into three separate fields.'],
+      ['Severity in mnemonic','Cisco puts the severity inside the mnemonic (the middle number), not just in the PRI. In practice, use the mnemonic severity — it\'s more reliable than decoding the PRI for Cisco devices.'],
+      ['Source IP is in the message','Unlike syslog standards, Cisco embeds the source IP inside the message text: "[Source: 10.1.1.5]". You have to parse the message body to extract network data.'],
+    ],
+    note:'Common Cisco mnemonics for blue teams: %SEC_LOGIN-5-LOGIN_SUCCESS (admin login), %SEC_LOGIN-4-LOGIN_FAILED (failed login), %SYS-5-CONFIG_I (config change), %LINK-3-UPDOWN (interface state change).'
+  },
+  {
+    title:'Cisco ASA — firewall connection logs',
+    why:'Used by: Cisco ASA and Firepower firewalls. Critical for network flow visibility — every allowed and denied connection gets logged.',
+    line:`<span class="hl hl-pri">&lt;166&gt;</span><span class="hl hl-ts">Oct 11 2024 22:14:30</span> <span class="hl hl-host">asa-fw01</span> : <span class="hl hl-app">%ASA-6-302013</span>: <span class="hl hl-msg">Built outbound TCP connection 12345 for outside:8.8.8.8/443 to inside:10.0.0.5/55421</span>`,
+    fields:[
+      ['Year in timestamp!','Unlike Cisco IOS, ASA includes the year: "Oct 11 2024 22:14:30". This is why the parser has a separate ASA timestamp pattern (_ASA_TS) distinct from the BSD timestamp pattern.'],
+      ['%ASA-severity-MSGID','The app field is %ASA-SEVERITY-MSGID. 302013 means "TCP connection built". The severity (6=info) tells you how important it is. 106023 (access list deny) is more interesting.'],
+      ['Src/dst are in the message','parse_cisco_asa_message() extracts: direction (inbound/outbound), protocol (TCP/UDP), dst IP:port ("outside:8.8.8.8/443"), src IP:port ("inside:10.0.0.5/55421"), and action (Built or Teardown).'],
+      ['Interface zones','"outside" and "inside" are interface names/zones, not actual network addresses. They tell you which security zone the traffic is crossing — critical for understanding firewall context.'],
+    ],
+    note:'Key ASA message IDs: 302013/302014 (TCP built/torn down), 302015/302016 (UDP), 106023 (access list deny), 313001 (ICMP denied), 713228 (VPN tunnel established).'
+  },
+  {
+    title:'Palo Alto Networks — CSV traffic logs',
+    why:'Used by: Palo Alto NGFW and Panorama. Very different from all other formats — the body is a comma-separated list of 60+ fields, not free text.',
+    line:`<span class="hl hl-pri">&lt;14&gt;</span><span class="hl hl-ts">Oct 11 22:14:55</span> <span class="hl hl-host">PA-FW01</span> 1,<span class="hl hl-ts">2024/10/11 22:14:55</span>,<span class="hl hl-sd">serial,TRAFFIC,end,...</span>,<span class="hl hl-msg">10.0.0.5,8.8.8.8,...,deny</span>`,
+    fields:[
+      ['The "1," marker','After the hostname, Palo Alto starts the CSV body with "1,". The parser uses this as a detection signal (_PAN_PREFIX regex looks for this). Everything after "1," is CSV.'],
+      ['Positional CSV fields','There are no column headers in the log. Field position determines meaning. Field 3 = log type (TRAFFIC, THREAT, CONFIG, SYSTEM). Field 7 = src IP. Field 8 = dst IP. Field 30 = action. PAN_TRAFFIC_FIELDS list in the code maps each position to a name.'],
+      ['Log type changes the schema','If field 3 is "THREAT" instead of "TRAFFIC", the fields mean different things. Always check field 3 before parsing positions. The code\'s parse_paloalto_csv() uses the PAN_TRAFFIC_FIELDS mapping.'],
+      ['Second timestamp','There are two timestamps: the outer BSD timestamp (when syslog received it) and an inner CSV timestamp (when the firewall saw it). Use the inner one — it\'s more accurate.'],
+    ],
+    note:'Palo Alto documentation publishes the full field order for each log type. Bookmark it: it changes between PAN-OS versions. Always verify your field mapping against the version your firewall is running.'
+  },
+  {
+    title:'AWS VPC Flow Logs — cloud network visibility',
+    why:'Used by: AWS Virtual Private Cloud. Captures network flow data for every ENI (Elastic Network Interface). Forwarded to syslog via CloudWatch.',
+    line:`<span class="hl hl-pri">&lt;14&gt;</span><span class="hl hl-ts">2024-10-11T22:14:50Z</span> <span class="hl hl-host">aws-collector</span> <span class="hl hl-app">vpc-flowlog</span>: <span class="hl hl-msg">2 123456789012 eni-abc123 10.0.1.5 8.8.8.8 54321 443 6 20 4096 ... ACCEPT OK</span>`,
+    fields:[
+      ['ISO timestamp in syslog header','AWS uses a full ISO-8601 timestamp in the syslog header — not BSD format. The AWS pattern uses \\S+T\\S+ to match it. The "vpc-flowlog" app name is used as a detection marker.'],
+      ['Space-delimited positional body','The message body is space-separated: version, account-id, interface-id, srcaddr, dstaddr, srcport, dstport, protocol, packets, bytes, start, end, action, log-status. parse_aws_vpc() uses parts[n] indexing.'],
+      ['Protocol is a number','AWS uses IANA protocol numbers: 6=TCP, 17=UDP, 1=ICMP. The parser translates these using a dict: proto_map = {"6": "TCP", "17": "UDP", "1": "ICMP"}.'],
+      ['ACCEPT / REJECT action','Field 12 (parts[12]) is the action. ACCEPT means the security group or NACL allowed it. REJECT means it was blocked. This is your visibility into AWS east-west traffic.'],
+    ],
+    note:'AWS VPC Flow Logs don\'t capture the actual packet content — just the metadata (who talked to whom, how much data, was it allowed). For content you\'d need packet capture. But for detection, flow metadata is usually enough.'
+  }
+];
+
+const CODE_STEPS=[
+  {
+    title:'The ParsedLog dataclass — the output container',
+    explain:'Before writing a single regex, the code defines what the output should look like. A dataclass in Python is like a blueprint for an object — it lists all the fields and their types.',
+    code:`@dataclass
+class ParsedLog:
+    raw: str              # the original unchanged line
+
+    # Fields every format provides
+    format: str = "unknown"
+    timestamp: Optional[str] = None   # always converted to ISO-8601 UTC
+    hostname: Optional[str] = None
+    app: Optional[str] = None
+    pid: Optional[str] = None
+    facility: Optional[str] = None    # "auth", "kern", "daemon" etc.
+    severity: Optional[str] = None    # "critical", "error", "warning" etc.
+    severity_num: Optional[int] = None
+
+    # Network fields — populated by sub-parsers
+    src_ip: Optional[str] = None
+    dst_ip: Optional[str] = None
+    src_port: Optional[int] = None
+    dst_port: Optional[int] = None
+
+    # Identity fields
+    username: Optional[str] = None
+    action: Optional[str] = None      # "auth_failed", "auth_success" etc.
+
+    # Flexible storage for format-specific extras
+    structured_data: dict = field(default_factory=dict)
+    extra: dict = field(default_factory=dict)`,
+    note:'Optional[str] means the field can hold a string or None (absent). The "extra" dict is a catch-all for fields that only exist in specific formats — like sudo_target or pan_app. This way every log object has the same shape regardless of format.'
+  },
+  {
+    title:'decode_pri() — cracking the PRI field',
+    explain:'This function takes the raw PRI number and returns facility name, severity name, and severity number. The maths is two operations: bit shift right by 3 (same as integer divide by 8) and bitwise AND with 7 (same as modulo 8).',
+    code:`def decode_pri(pri_val: int):
+    """
+    PRI encodes two values using this formula:
+      PRI = (facility_number * 8) + severity_number
+
+    To reverse it:
+      facility = PRI // 8    (or PRI >> 3 using bit shift)
+      severity = PRI % 8     (or PRI & 0x07 using bitmask)
+
+    Example: PRI 34
+      facility = 34 >> 3 = 4  → look up in FACILITIES dict → "auth"
+      severity = 34 & 7  = 2  → look up in SEVERITIES dict → "critical"
+    """
+    facility_num = pri_val >> 3     # right-shift 3 bits = divide by 8
+    severity_num = pri_val & 0x07   # bitmask 00000111 = keep last 3 bits
+
+    facility = FACILITIES.get(facility_num, f"local{facility_num}")
+    severity = SEVERITIES.get(severity_num, str(severity_num))
+
+    return facility, severity, severity_num`,
+    note:'Why bit operations instead of division? They\'re faster and more idiomatic for this kind of packing/unpacking. >> 3 and & 0x07 are the standard way to work with packed bit fields in any language.'
+  },
+  {
+    title:'Compiled regex patterns — the format detectors',
+    explain:'The patterns are compiled once at the top of the file using re.compile(). This makes them faster because Python pre-processes them instead of re-parsing the pattern string every time.',
+    code:`# Named groups (?P<name>...) let you access matched parts by name
+# instead of by position — much clearer than groups()[0], groups()[1] etc.
+
+# RFC 3164: &lt;PRI&gt;timestamp host app[pid]: message
+_RFC3164 = re.compile(
+    r'^&lt;(?P&lt;pri&gt;\d+)&gt;'          # &lt;digits&gt; at start of line
+    r'(?P&lt;ts&gt;Jan|Feb|...\d{2}:\d{2}:\d{2})\s+'  # BSD timestamp
+    r'(?P&lt;host&gt;\S+)\s+'            # non-whitespace hostname
+    r'(?P&lt;app&gt;[^\[:\s]+)'          # app name (no brackets, colon, or space)
+    r'(?:\[(?P&lt;pid&gt;\d+)\])?:\s*'   # optional [PID]: — the ?: makes it optional
+    r'(?P&lt;msg&gt;.*)'                  # everything else = message
+)
+
+# Cisco ASA is checked BEFORE RFC 3164 because it has a year in its
+# timestamp — if you tried RFC 3164 first, it would partially match
+# and you'd get a garbage timestamp.
+_CISCO_ASA = re.compile(
+    r'^&lt;(?P&lt;pri&gt;\d+)&gt;'
+    r'(?P&lt;ts&gt;Mon \d{1,2} \d{4} \d{2}:\d{2}:\d{2})\s+'  # has year!
+    r'(?P&lt;host&gt;\S+)\s+:\s+'        # note the " : " — ASA has a space-colon-space
+    r'(?P&lt;mnemonic&gt;%ASA-\d-\d+):\s*'
+    r'(?P&lt;msg&gt;.*)'
+)`,
+    note:'(?P<name>...) is a named capture group. After matching, you access it with m.group("name") instead of m.group(1). Makes the code readable because you see what each piece represents.'
+  },
+  {
+    title:'parse_line() — the dispatcher',
+    explain:'This is the main function. It tries each format pattern in priority order. As soon as one matches, it populates the ParsedLog and returns it. The order of checks matters — more specific patterns must come before more general ones.',
+    code:`def parse_line(raw_line: str) -> ParsedLog:
+    line = raw_line.strip()
+    log  = ParsedLog(raw=line)   # empty container
+
+    # 1. AWS VPC — check FIRST because it uses ISO timestamp + "vpc-flowlog" marker
+    m = _AWS_VPC.match(line)
+    if m:
+        log.format = "aws_vpc"
+        # ...fill fields, call parse_aws_vpc()...
+        return log              # RETURN immediately — don't fall through
+
+    # 2. Cisco ASA — check before RFC 3164 because it has a YEAR in timestamp
+    #    If we tried RFC 3164 first, it would match the month/day part
+    #    and parse a garbage timestamp.
+    m = _CISCO_ASA.match(line)
+    if m:
+        log.format = "cisco_asa"
+        # ...
+        return log
+
+    # 3. Cisco IOS — has %FACILITY-SEV-MNEMONIC as app name
+    # 4. Palo Alto  — has "1," CSV body marker
+    # 5. RFC 5424   — has version "1" after PRI
+    # 6. RFC 3164   — has PRI + BSD timestamp (most generic, checked last)
+    # 7. Linux auth — no PRI prefix at all (file-read logs)
+    # 8. Unknown    — nothing matched, store raw in message field
+
+    m = _RFC3164.match(line)
+    if m:
+        log.format = "rfc3164"
+        pri = int(m.group("pri"))
+        log.facility, log.severity, log.severity_num = decode_pri(pri)
+        log.timestamp = normalise_bsd_ts(m.group("ts"))
+        log.hostname  = m.group("host")
+        log.app       = m.group("app")
+        log.pid       = m.group("pid")   # None if no [PID] in log
+        log.message   = m.group("msg")
+        _dispatch_message(log)           # route message to sub-parser
+        return log`,
+    note:'The "return early" pattern (return as soon as a match is found) means only one format\'s code runs per line. No wasted work, and no risk of a later pattern overwriting what an earlier one correctly matched.'
+  },
+  {
+    title:'Sub-parsers — extracting data from message bodies',
+    explain:'Once the format is identified and the header fields are extracted, sub-parsers handle the message text. Each one knows the format of a specific app\'s output and extracts structured fields from it.',
+    code:`def parse_ssh_message(msg: str, log: ParsedLog):
+    """SSH log messages look like:
+       "Failed password for alice from 192.168.1.42 port 22 ssh2"
+       "Accepted password for bob from 10.0.0.5 port 55321 ssh2"
+    """
+    # One regex captures: username, IP, port — all in one pass
+    m = re.search(
+        r'(?:for|from user)\s+(?P&lt;user&gt;\S+)'   # username
+        r'\s+from\s+(?P&lt;ip&gt;[\d.]+)'             # source IP
+        r'\s+port\s+(?P&lt;port&gt;\d+)',              # port
+        msg
+    )
+    if m:
+        log.username = m.group("user")
+        log.src_ip   = m.group("ip")
+        log.src_port = int(m.group("port"))
+
+    # Set action based on keywords in the message
+    if "Failed" in msg or "failure" in msg.lower():
+        log.action = "auth_failed"
+    elif "Accepted" in msg or "success" in msg.lower():
+        log.action = "auth_success"
+
+
+def parse_iptables_message(msg: str, log: ParsedLog):
+    """iptables logs are KEY=VALUE pairs:
+       "IN=eth0 OUT= SRC=10.0.0.5 DST=10.0.0.1 PROTO=TCP SPT=55421 DPT=22"
+       Use findall to get ALL key=value pairs at once.
+    """
+    fields = dict(re.findall(r'(\w+)=([\S]+)', msg))
+    # Now fields is a dict: {"IN": "eth0", "SRC": "10.0.0.5", ...}
+    if "SRC" in fields: log.src_ip   = fields["SRC"]
+    if "DST" in fields: log.dst_ip   = fields["DST"]
+    if "DPT" in fields: log.dst_port = int(fields["DPT"])`,
+    note:'re.findall(r\'(\\w+)=(\\S+)\', text) returns a list of (key, value) tuples. Wrapping it in dict() turns it into a lookup table. This one-liner handles any number of key=value pairs without knowing them in advance.'
+  },
+  {
+    title:'Timestamp normalisation — making all times comparable',
+    explain:'Different log sources use wildly different timestamp formats. The parser converts all of them to the same format: ISO-8601 UTC (e.g. 2024-10-11T22:14:15+00:00). This means you can sort and compare logs from different sources correctly.',
+    code:`# Problem 1: BSD format has no year and no timezone
+# "Oct 11 22:14:15"
+# Solution: assume current year, assume UTC
+
+def normalise_bsd_ts(s: str) -> Optional[str]:
+    m = _BSD_TS.match(s.strip())   # _BSD_TS regex matches "Mon DD HH:MM:SS"
+    if not m:
+        return None
+    year = datetime.now().year    # ← assume current year (limitation!)
+    mon  = MONTH_MAP[m.group("mon")]   # "Oct" → 10
+    day  = int(m.group("day"))
+    h, mi, sec = map(int, m.group("time").split(":"))
+    dt = datetime(year, mon, day, h, mi, sec, tzinfo=timezone.utc)
+    return dt.isoformat()   # "2024-10-11T22:14:15+00:00"
+
+
+# Problem 2: ISO-8601 has many variants
+# "2024-10-11T22:14:15Z"       ← Z means UTC
+# "2024-10-11T22:14:15.003Z"   ← with milliseconds
+# "2024-10-11T22:14:15+00:00"  ← with explicit offset
+
+def normalise_iso_ts(s: str) -> Optional[str]:
+    s = s.strip().rstrip("Z") + "+00:00"    # normalise to +00:00 suffix
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%f+00:00",
+                "%Y-%m-%dT%H:%M:%S+00:00"):
+        try:
+            dt = datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
+            return dt.isoformat()
+        except ValueError:
+            pass    # try next format
+    return None`,
+    note:'The "assume current year" approach for BSD timestamps is a real limitation. If you\'re parsing December logs in January, logs from December 31 will get the wrong year. Production parsers solve this by tracking the "last seen timestamp" and using context to detect year rollovers.'
+  },
+  {
+    title:'The output and CLI — putting it all together',
+    explain:'The main() function ties everything together: read input (file or stdin), parse each line, optionally run alerts, then output in the chosen format. The to_dict() method on ParsedLog converts the object to a plain dict for JSON/CSV output.',
+    code:`def main():
+    # argparse handles the command-line interface
+    # python3 syslog_parser.py mylog.log --format json --alerts
+    ap = argparse.ArgumentParser(...)
+    ap.add_argument("input")
+    ap.add_argument("--format", choices=["table","json","csv"], default="table")
+    ap.add_argument("--alerts", action="store_true")
+    args = ap.parse_args()
+
+    # Read input — file or stdin ("-")
+    if args.input == "-":
+        lines = sys.stdin.readlines()     # pipe: cat log.txt | python3 parser.py -
+    else:
+        lines = Path(args.input).read_text().splitlines()
+
+    # Parse every non-empty line
+    parsed = [parse_line(line) for line in lines if line.strip()]
+
+    # Run alert engine if --alerts flag is set
+    engine = AlertEngine()
+    alerts_map = {}
+    if args.alerts:
+        for log in parsed:
+            hits = engine.check(log)
+            if hits:
+                alerts_map[id(log)] = hits   # id(log) = memory address = unique key
+
+    # Output in chosen format
+    if args.format == "json":
+        # to_dict() removes None fields and returns a clean dict
+        output = [log.to_dict() for log in parsed]
+        print(json.dumps(output, indent=2))
+    elif args.format == "csv":
+        # csv.DictWriter handles quoting and escaping automatically
+        writer = csv.DictWriter(sys.stdout, fieldnames=[...])
+        for log in parsed:
+            writer.writerow(log.to_dict())
+    else:
+        print_table(parsed, alerts_map)   # human-readable terminal output`,
+    note:'The --format json output is designed to be piped into other tools: python3 syslog_parser.py log.txt --format json | jq \'.[] | select(.action == "auth_failed")\' will filter only failed auth events. This is how you build analysis pipelines.'
+  }
+];
+
+let fmtIdx=0, codeIdx=0;
+
+function buildDots(container,total,current){
+  const el=document.getElementById(container);
+  el.innerHTML='';
+  for(let i=0;i<total;i++){
+    const d=document.createElement('div');
+    d.className='dot'+(i===current?' on':'');
+    el.appendChild(d);
+  }
+}
+
+function renderFmt(){
+  const s=FMT_STEPS[fmtIdx];
+  buildDots('fmt-dots',FMT_STEPS.length,fmtIdx);
+  document.getElementById('fmt-counter').textContent=(fmtIdx+1)+' / '+FMT_STEPS.length;
+  document.getElementById('fmt-prev').disabled=fmtIdx===0;
+  document.getElementById('fmt-next').disabled=fmtIdx===FMT_STEPS.length-1;
+  let html=`<div class="section">
+    <div class="label">${s.title}</div>
+    <div class="body" style="margin-bottom:10px;font-size:12px;color:var(--color-text-secondary)">${s.why}</div>
+    <pre>${s.line}</pre>
+  </div>
+  <div class="section">
+    <div class="label">Field breakdown</div>`;
+  s.fields.forEach(([name,desc])=>{
+    html+=`<div class="card"><div class="card-title">${name}</div><div class="card-body">${desc}</div></div>`;
+  });
+  html+=`</div>`;
+  if(s.note) html+=`<div class="alert-box info">${s.note}</div>`;
+  document.getElementById('fmt-content').innerHTML=html;
+}
+
+function fmtStep(d){fmtIdx=Math.max(0,Math.min(FMT_STEPS.length-1,fmtIdx+d));renderFmt();}
+
+function renderCode(){
+  const s=CODE_STEPS[codeIdx];
+  buildDots('code-dots',CODE_STEPS.length,codeIdx);
+  document.getElementById('code-counter').textContent=(codeIdx+1)+' / '+CODE_STEPS.length;
+  document.getElementById('code-prev').disabled=codeIdx===0;
+  document.getElementById('code-next').disabled=codeIdx===CODE_STEPS.length-1;
+  document.getElementById('code-content').innerHTML=`
+    <div class="section">
+      <div class="label">${s.title}</div>
+      <div class="body" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">${s.explain}</div>
+      <pre>${s.code}</pre>
+      ${s.note?`<div class="alert-box good" style="margin-top:10px">${s.note}</div>`:''}
+    </div>`;
+}
+
+function codeStep(d){codeIdx=Math.max(0,Math.min(CODE_STEPS.length-1,codeIdx+d));renderCode();}
+
+const SIM_DATA={
+  ssh_fail:{action:'auth_failed',app:'sshd',username:'alice',src_ip:'192.168.1.42',format:'rfc3164'},
+  ssh_root:{action:'auth_failed',app:'sshd',username:'root',src_ip:'10.0.0.5',format:'rfc3164'},
+  sudo:{app:'sudo',format:'linux_auth',extra:{sudo_target:'root'},username:'alice'},
+  win_fail:{event_id:'4625',username:'badguy',src_ip:'203.0.113.5',format:'rfc3164'},
+  win_acct:{event_id:'4720',username:'backdoor',format:'rfc3164'},
+  clean:{app:'kernel',format:'linux_kern',message:'disk io completed'},
+};
+
+const RULES=[
+  {id:'AUTH001',name:'SSH brute force — failed password',sev:'high',check:l=>l.action==='auth_failed'&&l.app&&l.app.includes('sshd')},
+  {id:'AUTH002',name:'Root login attempt via SSH',sev:'critical',check:l=>l.username==='root'&&l.app&&l.app.includes('sshd')},
+  {id:'PRIV001',name:'Sudo escalation to root',sev:'medium',check:l=>l.app&&l.app.includes('sudo')&&l.extra&&l.extra.sudo_target==='root'},
+  {id:'WIN001',name:'Windows failed logon (EventID 4625)',sev:'high',check:l=>l.event_id==='4625'},
+  {id:'WIN002',name:'Windows account created (EventID 4720)',sev:'critical',check:l=>l.event_id==='4720'},
+];
+const SEV_COLORS={critical:'#FCEBEB',high:'#FAEEDA',medium:'#E6F1FB',info:'#EAF3DE'};
+const SEV_TC={critical:'#791F1F',high:'#633806',medium:'#0C447C',info:'#27500A'};
+
+function simAlert(){
+  const key=document.getElementById('sim-log').value;
+  const log=SIM_DATA[key];
+  const hits=RULES.filter(r=>{try{return r.check(log);}catch(e){return false;}});
+  let html='';
+  if(hits.length===0){
+    html='<div class="alert-box good">No alerts triggered. This log line looks clean.</div>';
+  } else {
+    hits.forEach(h=>{
+      html+=`<div class="alert-box warn" style="border-color:${SEV_TC[h.sev]};background:${SEV_COLORS[h.sev]};color:${SEV_TC[h.sev]};margin-bottom:6px"><b>[${h.sev.toUpperCase()}] ${h.id}</b> — ${h.name}</div>`;
+    });
+  }
+  document.getElementById('sim-result').innerHTML=html;
+}
+
+renderFmt();
+renderCode();
+</script>
